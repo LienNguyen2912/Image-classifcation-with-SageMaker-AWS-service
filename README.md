@@ -152,7 +152,7 @@ We will try both methods are used for demonstration purposes, but the model that
 ```sh
 deploy_amt_model = True
 ```
-### Training with SageMaker Training
+### Training with SageMaker Training
 To begin, let us create a _sageMaker.estimator.Estimator_ object to launch the training job.
 #### Training parameters
 There are two kinds of parameters that need to be set for training. The first one are the parameters for the training job. These include:
@@ -212,8 +212,114 @@ ic.fit(inputs=data_channels, logs=True)
 ```
 Here is my result. Because all I want is to demo how to image classification on Sagemaker, the training sample data has only 1000 images, that's why accuracy is not good.</br>
 ![1stTraing](https://user-images.githubusercontent.com/73010204/210168433-4e8edb98-6231-4b36-a92d-e29d8f95901c.png)</br>
+![output1](https://user-images.githubusercontent.com/73010204/210168803-8d3d47a0-56bd-4d97-9256-61256e78bdc4.png)</br>
 
+### Training with Automatic Model Tuning (HPO)
+As mentioned above, instead of manually configuring our hyper parameter values and training with SageMaker Training, we’ll use Amazon SageMaker Automatic Model Tuning.
+```sh
+import time
+from sagemaker.tuner import IntegerParameter, ContinuousParameter
+from sagemaker.tuner import HyperparameterTuner
+
+job_name = "DEMO-ic-mul-" + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime())
+print("Tuning job name: ", job_name)
+
+# Image Classification tunable hyper parameters can be found here https://docs.aws.amazon.com/sagemaker/latest/dg/IC-tuning.html
+hyperparameter_ranges = {
+    "beta_1": ContinuousParameter(1e-6, 0.999, scaling_type="Auto"),
+    "beta_2": ContinuousParameter(1e-6, 0.999, scaling_type="Auto"),
+    "eps": ContinuousParameter(1e-8, 1.0, scaling_type="Auto"),
+    "gamma": ContinuousParameter(1e-8, 0.999, scaling_type="Auto"),
+    "learning_rate": ContinuousParameter(1e-6, 0.5, scaling_type="Auto"),
+    "mini_batch_size": IntegerParameter(8, 64, scaling_type="Auto"),
+    "momentum": ContinuousParameter(0.0, 0.999, scaling_type="Auto"),
+    "weight_decay": ContinuousParameter(0.0, 0.999, scaling_type="Auto"),
+}
+
+# Increase the total number of training jobs run by AMT, for increased accuracy (and training time).
+max_jobs = 6
+# Change parallel training jobs run by AMT to reduce total training time, constrained by your account limits.
+# if max_jobs=max_parallel_jobs then Bayesian search turns to Random.
+max_parallel_jobs = 1
+
+
+hp_tuner = HyperparameterTuner(
+    ic,
+    "validation:accuracy",
+    hyperparameter_ranges,
+    max_jobs=max_jobs,
+    max_parallel_jobs=max_parallel_jobs,
+    objective_type="Maximize",
+)
+
+# Launch a SageMaker Tuning job to search for the best hyperparameters
+hp_tuner.fit(inputs=data_channels, job_name=job_name)
+```
+It may take few minutes to complete
+> INFO:sagemaker:Creating hyperparameter tuning job with name: DEMO-ic-mul-2022-12-30-13-40-35</br>
+> Tuning job name:  DEMO-ic-mul-2022-12-30-13-40-35</br>
+>...........................................................................................................................................................................................!
+
+### Use the best model created to start training again
+```sh
+model_data = (hp_tuner.best_estimator() if deploy_amt_model else ic).model_data
+print(ic.model_data)
+
+# Prepare model channel in addition to train and validation
+model_data_channel = sagemaker.inputs.TrainingInput(
+    model_data,
+    distribution="FullyReplicated",
+    s3_data_type="S3Prefix",
+    content_type="application/x-sagemaker-model",
+)
+
+data_channels = {"train": train_data, "validation": validation_data, "model": model_data_channel}
+```
+
+> 2022-12-30 13:46:50 Starting - Preparing the instances for training</br>
+> 2022-12-30 13:46:50 Downloading - Downloading input data</br>
+> 2022-12-30 13:46:50 Training - Training image download completed. Training in progress.</br>
+> 2022-12-30 13:46:50 Uploading - Uploading generated training model</br>
+> 2022-12-30 13:46:50 Completed - Resource reused by training job: DEMO-ic-mul-2022-12-30-13-40-35-002-6cc4b1dc
+s3://sagemaker-us-east-1-597051996741/my-catsdogs-fulltraining/output/image-classification-2022-12-30-13-29-13-383/output/model.tar.gz</br>
+
+```sh
+incr_ic = sagemaker.estimator.Estimator(
+    training_image,
+    role,
+    instance_count=1,
+    instance_type="ml.p3.2xlarge",
+    volume_size=50,
+    max_run=360000,
+    input_mode="File",
+    output_path=s3_output_location,
+    sagemaker_session=sess,
+)
+incr_ic.set_hyperparameters(
+    num_layers=18,
+    image_shape="3,224,224",
+    num_classes=2,
+    num_training_samples=1000,
+    mini_batch_size=64,
+    epochs=2,
+    learning_rate=0.01,
+    top_k=2,
+)
+
+incr_ic.fit(inputs=data_channels, logs=True)
+```
+As you can see from the logs, the training starts with the previous model and hence the accuracy for the first epoch itself is higher.</br>
+![2ndTraing](https://user-images.githubusercontent.com/73010204/210173111-b0e5c143-da81-4c84-8e5e-deb5ca7dbe50.png)</br>
+
+## Realtime inference
+We now host the model with an endpoint and perform realtime inference.
+You can deploy the created model by using the deploy method in the estimator
+
+### Download test image
+### Evaluation
+### Clean up
 
 # Reference
-https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-incremental-training-highlevel.html
+https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-incremental-training-highlevel.html</br>
+https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-fulltraining.ipynb
 
