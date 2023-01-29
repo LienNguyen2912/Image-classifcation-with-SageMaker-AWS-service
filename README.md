@@ -54,7 +54,7 @@ Let's create the folder _images_to_classify_ and drag the .rec files created abo
  ### Make the S3 buket publicly accessible
  Check off _Block all public access_ is not enough to make the bucket public access, we need to edit its policy
 ![createS3_7](https://user-images.githubusercontent.com/73010204/210161348-f9217305-7c21-41e9-a212-faaed6d026d6.png)</br>
-Replace your bucket name into the _"Resorce"_ tag, it should be like this
+Replace your bucket name into the _"Resource"_ tag, it should be like this
 ```sh
 {
     "Version": "2008-10-17",
@@ -74,7 +74,8 @@ Replace your bucket name into the _"Resorce"_ tag, it should be like this
 ![createS3_8](https://user-images.githubusercontent.com/73010204/210161350-1fd08311-b904-4edd-a5c3-f77236f2d7ad.png)</br>
 Nice, and it becomes _public_. You can get the URL address and download .rec files from a browser.
 ![createS3_9](https://user-images.githubusercontent.com/73010204/210161352-0642f3d7-6d7d-4335-85fd-5b1fcdb7ba5b.png)</br>
-
+Get .rec file url link:</br>
+![image](https://user-images.githubusercontent.com/73010204/215301007-0631f885-ece3-4049-84ee-735200f1bee0.png)</br>
 ## Create a SageMaker notebook instance
 Choose SageMaker service, and create a new notebook instance. Because we created the bucket on N.Virginia region so it should be the same region here.</br>
 ![notebook1](https://user-images.githubusercontent.com/73010204/210161564-80c582f0-7914-40a2-8010-7acd0f9fd07e.png)</br>
