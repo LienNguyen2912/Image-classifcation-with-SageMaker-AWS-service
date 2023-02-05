@@ -323,14 +323,61 @@ As you can see from the logs, the training starts with the previous model and he
 ![image](https://user-images.githubusercontent.com/73010204/216802756-6e6e49cf-659c-4202-b5da-7e0798f29bce.png)</br>
 
 ## Realtime inference
-We now host the model with an endpoint and perform realtime inference.
-You can deploy the created model by using the deploy method in the estimator
-
 ### Download test image
-### Evaluation
+We need to pre-processing for input image before testing it
+```sh
+from PIL import Image
+
+NORMALIZED_WID = 224
+NORMALIZED_HEI = 224
+
+def calculate_image_crop_box_by_center(image):
+    # box=(left, upper, right, lower)
+    width, height = image.size # Output: (499, 375)
+    print(f"in: {image.size}")
+    if (width == height) and (height == NORMALIZED_HEI):
+        return(0, 0 , NORMALIZED_WID, NORMALIZED_WID)
+    center_x = width/2
+    center_y = height/2
+    if (width <= height):
+        top = center_y - width/2
+        left = 0
+        return (left, top, left + width, top + width)
+    else:
+        top = 0
+        left = center_x - height/2
+        return (left, top, left + height, top + height)
+
+def resize_scale_image_by_box(image, box):
+    outImage = image.crop(box)
+    outImage.thumbnail((NORMALIZED_WID, NORMALIZED_HEI))
+    print(f"out: {outImage.size}")
+    return outImage
+
+
+image_url = "https://lien-cats-dogs-bucket.s3.amazonaws.com/test/Cute_dog.jpg"
+download(image_url)
+
+file_name = image_url.split("/")[-1]
+image = Image.open(file_name)
+print(file_name)
+
+image.show()
+
+print("image pre-processing..")
+croppedBox = calculate_image_crop_box_by_center(image)
+image = resize_scale_image_by_box(image, croppedBox)
+image.show()
+normalized_file_name = "normalized_cats_dogs.jpg"
+image.save(normalized_file_name)
+print("image pre-processing completed")
+```
+![image](https://user-images.githubusercontent.com/73010204/216803232-01d1a80e-33ec-4eae-bb60-4323722e9232.png)</br>
+### Deploy
 ### Clean up
 
 # Reference
 https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-incremental-training-highlevel.html</br>
+
 https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-fulltraining.ipynb
 
