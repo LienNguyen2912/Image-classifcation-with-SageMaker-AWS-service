@@ -258,11 +258,9 @@ hp_tuner = HyperparameterTuner(
 # Launch a SageMaker Tuning job to search for the best hyperparameters
 hp_tuner.fit(inputs=data_channels, job_name=job_name)
 ```
-It may take few minutes to complete
-> INFO:sagemaker:Creating hyperparameter tuning job with name: DEMO-ic-mul-2022-12-30-13-40-35</br>
-> Tuning job name:  DEMO-ic-mul-2022-12-30-13-40-35</br>
->...........................................................................................................................................................................................!
-
+It may take few minutes to complete</br>
+![image](https://user-images.githubusercontent.com/73010204/216800861-2875a70e-7417-4e38-ba15-99ceb7c1cc5d.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216800888-46dade2f-bee6-4339-b277-97ef5a31b6e6.png)</br>
 ### Prepare for incremental training
 Incremental training is a training technique in machine learning where the model is trained on small chunks of data, rather than the entire dataset, at a time. This allows the model to continuously learn and adapt to new information as it becomes available, rather than having to retrain on the entire dataset every time there is a change. Incremental training can improve the training efficiency and reduce the computational resources required, especially when dealing with large datasets.</br>
 Incremental training is useful in several situations:
@@ -292,14 +290,9 @@ model_data_channel = sagemaker.inputs.TrainingInput(
 
 data_channels = {"train": train_data, "validation": validation_data, "model": model_data_channel}
 ```
-
-> 2022-12-30 13:46:50 Starting - Preparing the instances for training</br>
-> 2022-12-30 13:46:50 Downloading - Downloading input data</br>
-> 2022-12-30 13:46:50 Training - Training image download completed. Training in progress.</br>
-> 2022-12-30 13:46:50 Uploading - Uploading generated training model</br>
-> 2022-12-30 13:46:50 Completed - Resource reused by training job: DEMO-ic-mul-2022-12-30-13-40-35-002-6cc4b1dc
-s3://sagemaker-us-east-1-597051996741/my-catsdogs-fulltraining/output/image-classification-2022-12-30-13-29-13-383/output/model.tar.gz</br>
-
+![image](https://user-images.githubusercontent.com/73010204/216800964-b601a8da-df03-4683-896c-f950fcc6cb9c.png)</br>
+### Start another training
+We do training again but with the best tuning parameter found. The number of classes, input image shape and number of layers should be the same as the previous training since we are starting with the same model. Other parameters, such as learning_rate, mini_batch_size, etc., can vary.
 ```sh
 incr_ic = sagemaker.estimator.Estimator(
     training_image,
@@ -314,6 +307,7 @@ incr_ic = sagemaker.estimator.Estimator(
 )
 incr_ic.set_hyperparameters(
     num_layers=18,
+    use_pretrained_model = 1,
     image_shape="3,224,224",
     num_classes=2,
     num_training_samples=1000,
