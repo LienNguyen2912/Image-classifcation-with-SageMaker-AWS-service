@@ -44,15 +44,18 @@ Login your AWS account, go to S3 bucket service and Create a bucket</br>
 The region of the bucket **must be same** with the region of the Sagemaker notebook instance you will create later. We don't need to specifiy where we are living as the region. Actually, I tried Osaka and then I got error of not support neither _ml.p3.2xlarge_ nor _ml.p2.xlarge_ instance_type when training.</br>
 Fill your bucket name</br>
 ![image](https://user-images.githubusercontent.com/73010204/216795007-8e8a59da-f49e-4c56-aacf-b22c9ea404f0.png)</br>
+Because we want to make this S3 bucket public acess so uncheck the _Block all public access_. We can do it by edit the _Permission_ later as well.</br>
 ![image](https://user-images.githubusercontent.com/73010204/216795035-1e5b92b6-e847-40d7-98ac-22f66e93eee9.png)</br>
 ![image](https://user-images.githubusercontent.com/73010204/216795066-87176ca0-cbd0-4cd0-8a33-7c9b1ba7f84a.png)</br>
-Because we want to make this S3 bucket public acess so uncheck the _Block all public access_. We can do it by edit the _Permission_ later as well.</br>
 Let's create the folder _images_to_classify_ and drag the .rec files created above to upload to, we will get </br>
 ![image](https://user-images.githubusercontent.com/73010204/216795176-847ba837-428c-474f-bd1f-8ee90d46de8c.png)</br>
-![image](https://user-images.githubusercontent.com/73010204/216795126-ed1238cb-a946-4f14-8634-6d1934ca0a51.png)
+↓
+![image](https://user-images.githubusercontent.com/73010204/216795126-ed1238cb-a946-4f14-8634-6d1934ca0a51.png)</br>
+
+![image](https://user-images.githubusercontent.com/73010204/216795252-569727b3-60f0-48ef-9996-ee0e0e200517.png)
  ### Make the S3 buket publicly accessible
  Check off _Block all public access_ is not enough to make the bucket public access, we need to edit its policy
-![createS3_7](https://user-images.githubusercontent.com/73010204/210161348-f9217305-7c21-41e9-a212-faaed6d026d6.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216795275-3910665e-5d21-4ff6-863e-5450c658e21c.png)</br>
 Replace your bucket name into the _"Resource"_ tag, it should be like this
 ```sh
 {
@@ -65,14 +68,14 @@ Replace your bucket name into the _"Resource"_ tag, it should be like this
                 "AWS": "*"
             },
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::nvirginia-lien-cats-dogs-buckets/*"
+            "Resource": "arn:aws:s3:::lien-cats-dogs-bucket/*"
         }
     ]
 }
 ```
-![createS3_8](https://user-images.githubusercontent.com/73010204/210161350-1fd08311-b904-4edd-a5c3-f77236f2d7ad.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216795348-9c1d3c27-758a-4624-8203-a11c76fb7093.png)</br>
 Nice, and it becomes _public_. You can get the URL address and download .rec files from a browser.
-![createS3_9](https://user-images.githubusercontent.com/73010204/210161352-0642f3d7-6d7d-4335-85fd-5b1fcdb7ba5b.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216795379-a3740860-bc7e-431c-a477-00f60eca9d26.png)</br>
 Get .rec file url link:</br>
 ![image](https://user-images.githubusercontent.com/73010204/215301007-0631f885-ece3-4049-84ee-735200f1bee0.png)</br>
 ## Create a SageMaker notebook instance
