@@ -22,21 +22,23 @@ pip install mxnet
 Next, we will create .lst and .rec file.</br>
 _cd_ to _dataset_dogs_cats_ folder and execute
 ```sh
-# create dataset_rec_train.lst file
-python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./dataset_rec_train ./train/ --recursive --list --num-thread 8
-# create dataset_rec_train.rec va dataset_rec_train.idx
-python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./dataset_rec_train ./train/ --recursive --pass-through --pack-label --num-thread 8
+# create cats_dogs_dataset_rec_train.lst file
+python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./cats_dogs_dataset_rec_train ./train/ --recursive --list --num-thread 8
+
+# create cats_dogs_dataset_rec_train.rec va cats_dogs_dataset_rec_train.idx
+python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./cats_dogs_dataset_rec_train ./train/ --recursive --pass-through --pack-label --num-thread 8
 ```
 Do almost the same to create .lst and .rec file for test folder
 ```sh
-# create dataset_rec_val.lst file
-python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./dataset_rec_val ./test/ --recursive --list --num-thread 8
-# create dataset_rec_val.lst file
-python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./dataset_rec_val ./test --recursive --pass-through --pack-label --no-shuffle --num-thread 8
+# create cats_dogs_dataset_rec_val.lst file
+python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./cats_dogs_dataset_rec_val ./test/ --recursive --list --num-thread 8
+
+# create cats_dogs_dataset_rec_val.lst file
+python C:/Users/liennt/AppData/Local/Programs/Python/Python36/Lib/site-packages/mxnet/tools/im2rec.py ./cats_dogs_dataset_rec_val ./test --recursive --pass-through --pack-label --no-shuffle --num-thread 8
 ```
-![create_rec_file](https://user-images.githubusercontent.com/73010204/210136380-cf569c68-5093-452f-8f44-f1fbddd089b3.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216799934-c248d0b3-69c8-41ef-ba70-ae1e71bd3ebf.png)</br>
 Then your folder will look like</br>
-![create_rec_file_done](https://user-images.githubusercontent.com/73010204/210136453-be0044c3-3098-41e0-9aa9-88f2920bd1aa.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216799941-ec27a52c-d614-492d-8512-95c08d50c1d1.png)</br>
 
 ## Upload to S3 bucket. Make public access
 ### Create a S3 bucket
@@ -52,7 +54,7 @@ Let's create the folder _images_to_classify_ and drag the .rec files created abo
 ↓
 ![image](https://user-images.githubusercontent.com/73010204/216795126-ed1238cb-a946-4f14-8634-6d1934ca0a51.png)</br>
 
-![image](https://user-images.githubusercontent.com/73010204/216795252-569727b3-60f0-48ef-9996-ee0e0e200517.png)
+![image](https://user-images.githubusercontent.com/73010204/216799979-8d5a0f57-b98b-4304-9d00-2fd7648d20d9.png)
  ### Make the S3 buket publicly accessible
  Check off _Block all public access_ is not enough to make the bucket public access, we need to edit its policy
 ![image](https://user-images.githubusercontent.com/73010204/216795275-3910665e-5d21-4ff6-863e-5450c658e21c.png)</br>
@@ -122,8 +124,8 @@ import os
 import urllib.request
 import boto3
 
-s3_train_key = "nvirginia-image-classification-full-training/train"
-s3_validation_key = "nvirginia-image-classification-full-training/validation"
+s3_train_key = "cats-dogs-classification-full-training/train"
+s3_validation_key = "cats-dogs-classification-full-training/validation"
 s3_train = "s3://{}/{}/".format(bucket, s3_train_key)
 s3_validation = "s3://{}/{}/".format(bucket, s3_validation_key)
 
@@ -131,12 +133,12 @@ def download(url):
     filename = url.split("/")[-1]
     if not os.path.exists(filename):
         urllib.request.urlretrieve(url, filename)
-
-download("https://nvirginia-lien-cats-dogs-buckets.s3.amazonaws.com/images_to_classify/dataset_rec_train.rec")
-download("https://nvirginia-lien-cats-dogs-buckets.s3.amazonaws.com/images_to_classify/dataset_rec_val.rec")
-
-!aws s3 cp dataset_rec_train.rec $s3_train --quiet
-!aws s3 cp dataset_rec_val.rec $s3_validation --quiet
+# download to this current instance memory
+download("https://lien-cats-dogs-bucket.s3.amazonaws.com/images_to_classify/cats_dogs_dataset_rec_train.rec")
+download("https://lien-cats-dogs-bucket.s3.amazonaws.com/images_to_classify/cats_dogs_dataset_rec_val.rec")
+#copy to s3 bucket
+!aws s3 cp cats_dogs_dataset_rec_train.rec $s3_train --quiet
+!aws s3 cp cats_dogs_dataset_rec_val.rec $s3_validation --quiet
 
 print(s3_train)
 print(s3_validation)
