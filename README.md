@@ -224,7 +224,7 @@ import time
 from sagemaker.tuner import IntegerParameter, ContinuousParameter
 from sagemaker.tuner import HyperparameterTuner
 
-job_name = "DEMO-ic-mul-" + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime())
+job_name = "CAT-DOG-ic-" + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime())
 print("Tuning job name: ", job_name)
 
 # Image Classification tunable hyper parameters can be found here https://docs.aws.amazon.com/sagemaker/latest/dg/IC-tuning.html
@@ -263,11 +263,25 @@ It may take few minutes to complete
 > Tuning job name:  DEMO-ic-mul-2022-12-30-13-40-35</br>
 >...........................................................................................................................................................................................!
 
-### Use the best model created to start training again
-```sh
-model_data = (hp_tuner.best_estimator() if deploy_amt_model else ic).model_data
-print(ic.model_data)
+### Prepare for incremental training
+Incremental training is a training technique in machine learning where the model is trained on small chunks of data, rather than the entire dataset, at a time. This allows the model to continuously learn and adapt to new information as it becomes available, rather than having to retrain on the entire dataset every time there is a change. Incremental training can improve the training efficiency and reduce the computational resources required, especially when dealing with large datasets.</br>
+Incremental training is useful in several situations:
+- Large datasets: When the dataset is too large to fit into memory, incremental training can be used to train the model on smaller chunks of data at a time, which allows the model to make progress without having to wait for the entire dataset to be loaded.
+- Data Streams: In cases where the data is constantly changing and streaming in real-time, incremental training can be used to update the model as new data becomes available. This can be useful in applications such as online advertising, fraud detection, and customer behavior analysis.
+- Cost-effective: Training a model on a large dataset can be computationally expensive, and incremental training can reduce the cost by training on small chunks of data at a time.
+- Adaptation to new data: When the distribution of the data changes over time, incremental training can be used to adapt the model to these changes and improve its performance.
 
+In summary, incremental training is useful when the data is large, constantly changing, computationally expensive, or when the model needs to adapt to changes in the data distribution.</br>
+It may be unnecessary in this sample but just do it. :D
+Or you can apply the _hp_tuner_ to deply right away.
+
+```sh
+# Print the location of the model data from the tuning job's best training (or the previous standlone training)
+model_data = (hp_tuner.best_estimator() if deploy_amt_model else ic).model_data
+print("***1.deploy_amt_model: ", deploy_amt_model)
+print("***2.hp_tuner.best_estimator().model_data: ", hp_tuner.best_estimator().model_data)
+print("***3.ic.model_data: ",ic.model_data)
+print("***4.model_data: ",model_data)
 # Prepare model channel in addition to train and validation
 model_data_channel = sagemaker.inputs.TrainingInput(
     model_data,
