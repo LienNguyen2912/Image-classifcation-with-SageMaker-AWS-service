@@ -323,7 +323,7 @@ As you can see from the logs, the training starts with the previous model and he
 ![image](https://user-images.githubusercontent.com/73010204/216802756-6e6e49cf-659c-4202-b5da-7e0798f29bce.png)</br>
 
 ## Realtime inference
-### Download test image
+### Download and resize test image
 We need to pre-processing for input image before testing it
 ```sh
 from PIL import Image
@@ -374,10 +374,72 @@ print("image pre-processing completed")
 ```
 ![image](https://user-images.githubusercontent.com/73010204/216803232-01d1a80e-33ec-4eae-bb60-4323722e9232.png)</br>
 ### Deploy
-### Clean up
+It may take few minutes for the endpoint to be **in service**
+```sh
+ic_classifier = incr_ic.deploy(initial_instance_count=1, instance_type="ml.m4.xlarge")
+```
+![image](https://user-images.githubusercontent.com/73010204/216821374-51401d06-77b2-4acd-8612-c42f8ad20f58.png)
 
+```sh
+import json
+import numpy as np
+from sagemaker.serializers import IdentitySerializer
+
+with open(normalized_file_name, "rb") as f:
+    payload = f.read()
+
+ic_classifier.serializer = IdentitySerializer("image/jpeg")
+result = json.loads(ic_classifier.predict(payload))
+# the result will output the probabilities for all classes
+# find the class with maximum probability and print the class index
+index = np.argmax(result)
+object_categories = [
+    "cat",
+    "dog",
+]
+print("Result: label - " + object_categories[index] + ", probability - " + str(result[index]))
+```
+> Result: label - dog, probability - 0.999991774559021
+
+Great! Try another image :))
+```sh
+image_url = "https://lien-cats-dogs-bucket.s3.amazonaws.com/test/cat_feline_cats_eye_215231.jpg"
+download(image_url)
+
+file_name = image_url.split("/")[-1]
+image = Image.open(file_name)
+print(file_name)
+
+image.show()
+
+print("image pre-processing..")
+croppedBox = calculate_image_crop_box_by_center(image)
+image = resize_scale_image_by_box(image, croppedBox)
+image.show()
+normalized_file_name = "normalized_cats_dogs.jpg"
+image.save(normalized_file_name)
+print("image pre-processing completed")
+
+ic_classifier.serializer = IdentitySerializer("image/jpeg")
+result = json.loads(ic_classifier.predict(payload))
+# the result will output the probabilities for all classes
+# find the class with maximum probability and print the class index
+index = np.argmax(result)
+object_categories = [
+    "cat",
+    "dog",
+]
+print("Result: label - " + object_categories[index] + ", probability - " + str(result[index]))
+```
+![image](https://user-images.githubusercontent.com/73010204/216822078-8b15dd6d-1422-4c7e-a267-229c9894e4d6.png)
+### Clean up
+```sh
+ic_classifier.delete_endpoint()
+```
 # Reference
 https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-incremental-training-highlevel.html</br>
-
-https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-fulltraining.ipynb
+https://stackoverflow.com/questions/66205498/how-to-save-model-tar-gz-file-in-sagemaker-using-estimator</br>
+https://stackoverflow.com/questions/67541920/how-to-create-a-model-on-model-tar-gz-in-sagemaker</br>
+https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/imageclassification_caltech/Image-classification-fulltraining.ipynb</br>
+https://github.com/juliensimon/dlnotebooks/blob/master/sagemaker/02-Image-classification-transfer-learning-cifar10-train-from-scratch.ipynb</br>
 
