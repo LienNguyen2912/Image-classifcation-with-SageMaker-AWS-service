@@ -259,8 +259,8 @@ hp_tuner = HyperparameterTuner(
 hp_tuner.fit(inputs=data_channels, job_name=job_name)
 ```
 It may take few minutes to complete</br>
-![image](https://user-images.githubusercontent.com/73010204/216800861-2875a70e-7417-4e38-ba15-99ceb7c1cc5d.png)</br>
-![image](https://user-images.githubusercontent.com/73010204/216800888-46dade2f-bee6-4339-b277-97ef5a31b6e6.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216801926-9e0c8b86-d92a-4c67-bb67-711ed3cbaff8.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216801984-5ba06cd8-9835-4336-bcbc-d522e5ced5cd.png)</br>
 ### Prepare for incremental training
 Incremental training is a training technique in machine learning where the model is trained on small chunks of data, rather than the entire dataset, at a time. This allows the model to continuously learn and adapt to new information as it becomes available, rather than having to retrain on the entire dataset every time there is a change. Incremental training can improve the training efficiency and reduce the computational resources required, especially when dealing with large datasets.</br>
 Incremental training is useful in several situations:
@@ -290,7 +290,7 @@ model_data_channel = sagemaker.inputs.TrainingInput(
 
 data_channels = {"train": train_data, "validation": validation_data, "model": model_data_channel}
 ```
-![image](https://user-images.githubusercontent.com/73010204/216800964-b601a8da-df03-4683-896c-f950fcc6cb9c.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216802004-47b12901-730c-4641-89c0-0d127492fd97.png)</br>
 ### Start another training
 We do training again but with the best tuning parameter found. The number of classes, input image shape and number of layers should be the same as the previous training since we are starting with the same model. Other parameters, such as learning_rate, mini_batch_size, etc., can vary.
 ```sh
@@ -312,7 +312,7 @@ incr_ic.set_hyperparameters(
     num_classes=2,
     num_training_samples=1000,
     mini_batch_size=64,
-    epochs=2,
+    epochs=5,
     learning_rate=0.01,
     top_k=2,
 )
@@ -320,7 +320,7 @@ incr_ic.set_hyperparameters(
 incr_ic.fit(inputs=data_channels, logs=True)
 ```
 As you can see from the logs, the training starts with the previous model and hence the accuracy for the first epoch itself is higher.</br>
-![2ndTraing](https://user-images.githubusercontent.com/73010204/210173111-b0e5c143-da81-4c84-8e5e-deb5ca7dbe50.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216802756-6e6e49cf-659c-4202-b5da-7e0798f29bce.png)</br>
 
 ## Realtime inference
 We now host the model with an endpoint and perform realtime inference.
