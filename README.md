@@ -144,9 +144,7 @@ print(s3_train)
 print(s3_validation)
 ```
 The result should be similar to</br>
-> s3://sagemaker-us-east-1-597051996741/nvirginia-image-classification-full-training/train/</br>
-> s3://sagemaker-us-east-1-597051996741/nvirginia-image-classification-full-training/validation/</br>
-![notebook_s3](https://user-images.githubusercontent.com/73010204/210167464-cbf52abd-55f6-4927-8935-b2920b443bc8.png)</br>
+![image](https://user-images.githubusercontent.com/73010204/216800182-a0566d6a-2c59-4ca0-bff6-faf2d7ddfa8f.png)</br>
 
 ## Training the model
 Now that we are done with all the setup that is needed, we are ready to train our object detector.</br></br>
@@ -181,7 +179,7 @@ ic = sagemaker.estimator.Estimator(
     training_image,
     role,
     instance_count=1,
-    instance_type="ml.p2.xlarge",
+    instance_type="ml.p3.2xlarge",
     volume_size=50,
     max_run=360000,
     input_mode="File",
@@ -190,6 +188,7 @@ ic = sagemaker.estimator.Estimator(
 )
 ic.set_hyperparameters(
     num_layers=18,
+    use_pretrained_model = 1,
     image_shape="3,224,224",
     num_classes=2,
     num_training_samples=1000,
@@ -215,9 +214,8 @@ validation_data = sagemaker.inputs.TrainingInput(
 data_channels = {"train": train_data, "validation": validation_data}
 ic.fit(inputs=data_channels, logs=True)
 ```
-Here is my result. Because all I want is to demo how to image classification on Sagemaker, the training sample data has only 1000 images, that's why accuracy is not good.</br>
-![1stTraing](https://user-images.githubusercontent.com/73010204/210168433-4e8edb98-6231-4b36-a92d-e29d8f95901c.png)</br>
-![output1](https://user-images.githubusercontent.com/73010204/210168803-8d3d47a0-56bd-4d97-9256-61256e78bdc4.png)</br>
+Here is my result. Because all I want is to demo how to image classification on Sagemaker, the training sample data has only 1000 images, we used transfer learning by setting _use_pretrained_model = 1,_.</br>
+![image](https://user-images.githubusercontent.com/73010204/216800326-7760b6c3-1426-4aca-8a3a-fa90b6eed72c.png)</br>
 
 ### Training with Automatic Model Tuning (HPO)
 As mentioned above, instead of manually configuring our hyper parameter values and training with SageMaker Training, we’ll use Amazon SageMaker Automatic Model Tuning.
