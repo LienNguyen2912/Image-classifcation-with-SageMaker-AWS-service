@@ -1,0 +1,222 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def resize_channel_dimension(image_path, new_dim):
+    # Read the image using matplotlib
+    image = plt.imread(image_path)
+    # Display the image using plt.imshow
+    plt.imshow(image)
+    # Show the plot
+    plt.show()
+    # Get the current number of channels
+    channels = image.shape[2]
+    
+    # Check if the current number of channels is equal to the new dimension
+    if channels == new_dim:
+        return image
+    
+    # Resize the channel dimension
+    if new_dim == 1:
+        # Convert to grayscale
+        image = np.mean(image, axis=2)
+        image = np.expand_dims(image, axis=2)
+    elif new_dim == 3:
+        # Convert to BGR if the image is grayscale
+        if channels == 1:
+            image = np.repeat(image, 3, axis=2)
+    else:
+        print("Error: unsupported number of channels")
+        return None
+    
+    return image
+
+# Example usage
+image = resize_channel_dimension("IMG_3100.JPG", 3)
+#plt.imsave("resized_image.jpg", image)
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+Load tar file, train again and make prediction
+import boto3
+import io
+import tarfile
+import sagemaker
+from sagemaker import get_execution_role
+
+# Connect to the AWS S3 service
+s3 = boto3.client("s3")
+
+# Define your AWS S3 bucket and TAR file name
+bucket_name = "your-bucket-name"
+tar_file_name = "your-tar-file.tar.gz"
+
+# Download the TAR file from S3
+s3_response = s3.get_object(Bucket=bucket_name, Key=tar_file_name)
+tar_file = io.BytesIO(s3_response['Body'].read())
+
+# Extract the contents of the TAR file
+with tarfile.open(fileobj=tar_file, mode='r') as tar:
+    tar.extractall()
+
+# Get the role that will be used to run the model on SageMaker
+role = get_execution_role()
+
+# Create a SageMaker session
+sess = sagemaker.Session()
+
+# Upload the extracted contents to an S3 location
+inputs = sess.upload_data(path='.', key_prefix='data/image-classifier')
+
+# Create an instance of the SageMaker Image Classification algorithm
+image_classifier = sagemaker.estimator.Estimator(
+    'image-classification',
+    role,
+    train_instance_count=1,
+    train_instance_type='ml.p2.xlarge',
+    image_name='382416733822.dkr.ecr.us-west-2.amazonaws.com/image-classification:1',
+    output_path='s3://{}/{}/output'.format(sess.default_bucket(), 'image-classifier'),
+    sagemaker_session=sess
+)
+
+# Train the model
+image_classifier.fit(inputs)
+
+# Make a prediction on an image
+def predict_image(classifier, image_file):
+    with open(image_file, 'rb') as f:
+        image = f.read()
+    results = classifier.predict(image)
+    print(results)
+
+predict_image(image_classifier, "your-image.jpg")
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+Load tar file, not train again and make a prediction
+import boto3
+import io
+import tarfile
+import sagemaker
+from sagemaker import get_execution_role
+
+# Connect to the AWS S3 service
+s3 = boto3.client("s3")
+
+# Define your AWS S3 bucket and TAR file name
+bucket_name = "your-bucket-name"
+tar_file_name = "your-tar-file.tar.gz"
+
+# Download the TAR file from S3
+s3_response = s3.get_object(Bucket=bucket_name, Key=tar_file_name)
+tar_file = io.BytesIO(s3_response['Body'].read())
+
+# Extract the contents of the TAR file
+with tarfile.open(fileobj=tar_file, mode='r') as tar:
+    tar.extractall()
+
+# Get the role that will be used to run the model on SageMaker
+role = get_execution_role()
+
+# Create a SageMaker session
+sess = sagemaker.Session()
+
+# Upload the extracted contents to an S3 location
+inputs = sess.upload_data(path='.', key_prefix='data/image-classifier')
+
+# Create an instance of the SageMaker Image Classification algorithm
+image_classifier = sagemaker.estimator.Estimator(
+    'image-classification',
+    role,
+    train_instance_count=1,
+    train_instance_type='ml.p2.xlarge',
+    image_name='382416733822.dkr.ecr.us-west-2.amazonaws.com/image-classification:1',
+    output_path='s3://{}/{}/output'.format(sess.default_bucket(), 'image-classifier'),
+    sagemaker_session=sess,
+    model_data='s3://{}/{}'.format(bucket_name, tar_file_name)
+)
+
+# Make a prediction on an image
+def predict_image(classifier, image_file):
+    with open(image_file, 'rb') as f:
+        image = f.read()
+    results = classifier.predict(image)
+    print(results)
+
+predict_image(image_classifier, "your-image.jpg")
+
+
+/*
+If you didn't specify a Docker image when creating your image classification model in Amazon SageMaker, 
+then it's likely that the model was created using the built-in Image Classification algorithm provided by SageMaker. 
+In that case, you can use the following image name for the image_name parameter in the sagemaker.estimator.Estimator function:
+image_name='380385424524.dkr.ecr.us-west-2.amazonaws.com/image-classification:1'
+training_image = image_uris.retrieve(region=sess.boto_region_name, framework="image-classification")
+print(training_image)
+print(sess.boto_region_name)
+811284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:1
+us-east-1
+811284229777.dkr.ecr.us-east-1.amazonaws.com/image-classification:1'
+=========================================
+import boto3								
+import cv2								
+import numpy as np								
+import matplotlib.pyplot as plt								
+								
+def extract_frames_from_video_stream(kinesis_stream_name):								
+    # Connect to Kinesis								
+    kinesis = boto3.client("kinesis")								
+								
+    # Get the next batch of records from the Kinesis stream								
+    response = kinesis.get_records(StreamName=kinesis_stream_name, Limit=10)								
+    records = response["Records"]								
+								
+    # Loop through each record and extract the frames								
+    for record in records:								
+        video_frame = np.frombuffer(record["Data"], dtype=np.uint8)								
+								
+        # Decode the video frame								
+        frame = cv2.imdecode(video_frame, cv2.IMREAD_COLOR)								
+								
+        # Perform any desired pre-processing on the frame, such as resizing								
+        resized_frame = cv2.resize(frame, (224, 224))								
+								
+        # Show the resized frame								
+        plt.imshow(resized_frame)								
+        plt.show()								
+								
+        # Return the extracted frame as an image								
+        yield resized_frame								
+The output of the function extract_frames_from_video_stream is an iterator that yields multiple resized frames as images. The function retrieves a batch of records from the specified Kinesis stream, and for each record, it extracts the video frame, pre-processes it by resizing, and yields it as an output. This process is repeated for each record in the batch. So the output of the function is a sequence of resized frames, not a single image.								
+								
+import boto3								
+import json								
+								
+def make_prediction(image, sagemaker_model):								
+    # Connect to the SageMaker runtime								
+    runtime = boto3.Session().client("sagemaker-runtime")								
+								
+    # Convert the image to a format that can be passed as input to the model								
+    image_data = image.tobytes()								
+    								
+    # Make an inference request to the model								
+    response = runtime.invoke_endpoint(EndpointName=sagemaker_model.endpoint,								
+                                       ContentType="application/x-image",								
+                                       Body=image_data)								
+    								
+    # Extract the prediction from the response								
+    result = json.loads(response["Body"].read().decode())								
+    prediction = result["predictions"][0]								
+    								
+    return prediction								
+								
+def main():								
+    kinesis_stream_name = "your-kinesis-stream-name"								
+    sagemaker_model = "your-sagemaker-model"								
+    								
+    # Extract the frames from the video stream								
+    for image in extract_frames_from_video_stream(kinesis_stream_name):								
+        # Make a prediction on the extracted frame								
+        prediction = make_prediction(image, sagemaker_model)								
+        								
+        # Log the prediction								
+        print("Prediction:", prediction)								
